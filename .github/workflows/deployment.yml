@@ -1,0 +1,17 @@
+name: Deployment
+
+on:
+  push:
+
+jobs:
+  provision-staging-infra:
+    name: Provision staging infra
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: ./.github/actions/provision-infra
+        name: Provision infra
+        with:
+          environment: staging

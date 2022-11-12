@@ -1,0 +1,80 @@
+.moto-aws-credentials: &moto-aws-credentials
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+
+.aws-credentials: &aws-credentials
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+
+containers:
+  fake-aws:
+    image: motoserver/moto:4.0.2
+    command: '-H 0.0.0.0'
+    ports:
+      - 5000:5000
+    environment:
+      *moto-aws-credentials
+
+  infra-env:
+    build_directory: ./.batect/infra-env
+    volumes:
+      - local: ./
+        container: /data
+        options: cached
+    working_directory: /data/src
+
+tasks:
+  aws:init:
+    run:
+      container: infra-env
+      entrypoint: /scripts/init.sh
+      environment:
+        *aws-credentials
+
+  aws:plan:
+    run:
+      container: infra-env
+      command: plan
+      environment:
+        *aws-credentials
+
+  aws:apply:
+    run:
+      container: infra-env
+      command: apply -auto-approve
+      environment:
+        *aws-credentials
+
+  moto:init:
+    run:
+      container: infra-env
+      entrypoint: /scripts/init.sh moto
+      environment:
+        AWS_ENDPOINT: http://host.docker.internal:5000
+
+  moto:plan:
+    prerequisites:
+      - moto:init
+    run:
+      container: infra-env
+      command: plan -var environment=local
+      environment:
+        *moto-aws-credentials
+
+  moto:apply:
+    prerequisites:
+      - moto:init
+    dependencies:
+      - fake-aws
+    run:
+      container: infra-env
+      command: apply -var environment=local -auto-approve
+      environment:
+        *moto-aws-credentials
+
+  lint:
+    run:
+      container: infra-env
+      entrypoint: tflint ./
