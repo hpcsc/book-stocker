@@ -4,9 +4,51 @@ on:
   push:
 
 jobs:
+  build-api:
+    name: Build API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: hpcsc
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Unit test
+        shell: bash
+        working-directory: ./components/api
+        run: |
+          ./batect unit-test
+
+      - name: Integration test
+        shell: bash
+        working-directory: ./components/api
+        run: |
+          ./batect integration-test
+
+      - name: Component test
+        shell: bash
+        working-directory: ./components/api
+        run: |
+          ./batect component-test
+
+      - name: Build and push Docker image
+        working-directory: ./components/api
+        shell: bash
+        run: |
+          ./scripts/build-docker.sh
+        env:
+          PUSH: true
+
   provision-staging-infra:
     name: Provision staging infra
     runs-on: ubuntu-latest
+    needs:
+      - build-api
     steps:
       - name: Checkout
         uses: actions/checkout@v3

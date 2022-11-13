@@ -23,4 +23,7 @@ go.work
 .terraform
 *.tfstate*
 provider.tf
+
 .idea
+**/.batect/caches
+coverage-*

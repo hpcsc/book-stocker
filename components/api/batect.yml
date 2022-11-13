@@ -1,0 +1,74 @@
+.local-aws-config: &local-aws-config
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: x
+  AWS_SECRET_ACCESS_KEY: y
+
+containers:
+  fake-aws:
+    image: motoserver/moto:4.0.2
+    command: '-H 0.0.0.0'
+    environment:
+      <<: *local-aws-config
+
+  api:
+    build_directory: .
+    dependencies:
+      - fake-aws
+    environment:
+      PORT: 13333
+      AWS_ENDPOINT: http://fake-aws:5000
+      ENVIRONMENT: local
+      <<: *local-aws-config
+
+  build-env:
+    build_directory: ./.batect/build-env
+    volumes:
+      - local: .
+        container: /app
+        options: cached
+      - type: cache
+        name: go-cache
+        container: /go
+    working_directory: /app
+    environment:
+      GOCACHE: /go/cache
+    run_as_current_user:
+      enabled: true
+      home_directory: /home/container-user
+
+tasks:
+  lint:
+    run:
+      container: build-env
+      command: /app/scripts/lint.sh
+
+  unit-test:
+    run:
+      container: build-env
+      command: /app/scripts/unit-test.sh
+
+  integration-test:
+    dependencies:
+      - fake-aws
+    run:
+      container: build-env
+      command: /app/scripts/integration-test.sh
+      environment:
+        AWS_ENDPOINT: http://fake-aws:5000
+        <<: *local-aws-config
+
+  component-test:
+    dependencies:
+      - api
+    run:
+      container: build-env
+      command: /app/scripts/component-test.sh
+      environment:
+        API_URL: http://api:13333
+        AWS_ENDPOINT: http://fake-aws:5000
+        <<: *local-aws-config
+
+  scan-vulnerability:
+    run:
+      container: build-env
+      command: /app/scripts/scan-vulnerability.sh
