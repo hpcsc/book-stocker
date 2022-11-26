@@ -1,0 +1,72 @@
+on:
+  workflow_call:
+    inputs:
+      name:
+        required: true
+        type: string
+    secrets:
+      github-token:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: hpcsc
+          password: ${{ secrets.github-token }}
+
+      - name: Unit test
+        shell: bash
+        working-directory: ./components/${{ inputs.name }}
+        run: |
+          ./batect unit-test
+
+      - name: Upload unit coverage reports as artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.name }}-unit-coverage-report
+          path: ./components/${{ inputs.name }}/coverage-unit*
+
+      - name: Integration test
+        id: integration-test
+        shell: bash
+        working-directory: ./components/${{ inputs.name }}
+        run: |
+          ./batect integration-test
+
+      - name: Upload integration coverage reports as artifact
+        if: (success() || failure()) && (steps.integration-test.outcome == 'success' || steps.integration-test.outcome == 'failure')
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.name }}-integration-coverage-report
+          path: ./components/${{ inputs.name }}/coverage-integration*
+
+      - name: Component test
+        id: component-test
+        shell: bash
+        working-directory: ./components/${{ inputs.name }}
+        run: |
+          ./batect component-test
+
+      - name: Upload component coverage reports as artifact
+        if: (success() || failure()) && (steps.component-test.outcome == 'success' || steps.component-test.outcome == 'failure')
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.name }}-component-coverage-report
+          path: ./components/${{ inputs.name }}/coverage-component*
+
+      - name: Build and push Docker image
+        working-directory: ./components/${{ inputs.name }}
+        shell: bash
+        run: |
+          ./scripts/build-docker.sh
+        env:
+          PUSH: true

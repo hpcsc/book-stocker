@@ -5,28 +5,15 @@ on:
 
 jobs:
   build-api:
-    name: Build API
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+    uses: ./.github/workflows/build-golang.yml
+    with:
+      name: api
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: ./.github/actions/build-golang
-        name: Build
-        with:
-          name: api
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  provision-staging-infra:
-    name: Provision staging infra
-    runs-on: ubuntu-latest
+  staging:
     needs:
       - build-api
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - uses: ./.github/actions/provision-infra
-        name: Provision infra
-        with:
-          environment: staging
+    uses: ./.github/workflows/provision-infra.yml
+    with:
+      environment: staging
