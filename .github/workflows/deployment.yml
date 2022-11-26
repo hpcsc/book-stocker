@@ -11,61 +11,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
+      - uses: ./.github/actions/build-golang
+        name: Build
         with:
-          registry: ghcr.io
-          username: hpcsc
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Unit test
-        shell: bash
-        working-directory: ./components/api
-        run: |
-          ./batect unit-test
-
-      - name: Upload unit coverage reports as artifact
-        if: success() || failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: unit-coverage-report
-          path: ./components/api/coverage-unit*
-
-      - name: Integration test
-        id: integration-test
-        shell: bash
-        working-directory: ./components/api
-        run: |
-          ./batect integration-test
-
-      - name: Upload integration coverage reports as artifact
-        if: (success() || failure()) && (steps.integration-test.outcome == 'success' || steps.integration-test.outcome == 'failure')
-        uses: actions/upload-artifact@v3
-        with:
-          name: integration-coverage-report
-          path: ./components/api/coverage-integration*
-
-      - name: Component test
-        id: component-test
-        shell: bash
-        working-directory: ./components/api
-        run: |
-          ./batect component-test
-
-      - name: Upload component coverage reports as artifact
-        if: (success() || failure()) && (steps.component-test.outcome == 'success' || steps.component-test.outcome == 'failure')
-        uses: actions/upload-artifact@v3
-        with:
-          name: component-coverage-report
-          path: ./components/api/coverage-component*
-
-      - name: Build and push Docker image
-        working-directory: ./components/api
-        shell: bash
-        run: |
-          ./scripts/build-docker.sh
-        env:
-          PUSH: true
+          name: api
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   provision-staging-infra:
     name: Provision staging infra
