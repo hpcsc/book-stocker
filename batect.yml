@@ -37,6 +37,14 @@ containers:
       enabled: true
       home_directory: /home/container-user
 
+  mkdocs:
+    build_directory: ./.batect/mkdocs
+    working_directory: /app
+    volumes:
+      - local: .
+        container: /app
+        options: cached
+
 tasks:
   lint:
     run:
@@ -73,3 +81,8 @@ tasks:
     run:
       container: build-env
       command: /build/scripts/scan-vulnerability.sh
+
+  generate-mkdocs:
+    run:
+      container: mkdocs
+      command: mkdocs build -f /app/docs/mkdocs/mkdocs.yml --site-dir /app/mkdocs-out

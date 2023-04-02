@@ -1,0 +1,5 @@
+site_name: book-stocker
+repo_url: https://github.com/hpcsc/book-stocker
+theme:
+  name: mkdocs
+  include_sidebar: false

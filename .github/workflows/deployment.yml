@@ -3,9 +3,21 @@ name: Deployment
 on:
   push:
 
+permissions:
+  # to publish to github pages
+  contents: read
+  pages: write
+  id-token: write
+
+  # to push docker image to github container registry
+  packages: write
+
 jobs:
   ci:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy-gh-pages.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -34,6 +46,24 @@ jobs:
         with:
           name: integration-coverage-report
           path: ./coverage-integration*
+
+      - name: Generate mkdocs
+        shell: bash
+        run: |
+          cp -v ./coverage-*.html ./docs/mkdocs/docs/
+          ./batect generate-mkdocs
+
+      - name: Setup Github Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload mkdocs
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./mkdocs-out
+
+      - name: Deploy to Github Pages
+        id: deploy-gh-pages
+        uses: actions/deploy-pages@v2
 
   build-api:
     runs-on: ubuntu-latest
