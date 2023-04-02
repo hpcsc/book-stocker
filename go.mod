@@ -1,4 +1,4 @@
-module github.com/hpcsc/book-stocker/api
+module github.com/hpcsc/book-stocker
 
 go 1.19
 

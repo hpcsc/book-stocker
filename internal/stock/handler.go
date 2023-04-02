@@ -7,8 +7,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/hpcsc/book-stocker/api/internal/store"
-	"github.com/hpcsc/book-stocker/api/internal/validate"
+	"github.com/hpcsc/book-stocker/internal/store"
+	"github.com/hpcsc/book-stocker/internal/validate"
 	"github.com/unrolled/render"
 	"net/http"
 )

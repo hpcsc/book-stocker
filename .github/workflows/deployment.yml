@@ -4,12 +4,89 @@ on:
   push:
 
 jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Unit test
+        shell: bash
+        run: |
+          ./batect unit-test
+
+      - name: Upload unit coverage reports as artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-coverage-report
+          path: ./coverage-unit*
+
+      - name: Integration test
+        id: integration-test
+        shell: bash
+        run: |
+          ./batect integration-test
+
+      - name: Upload integration coverage reports as artifact
+        if: (success() || failure()) && (steps.integration-test.outcome == 'success' || steps.integration-test.outcome == 'failure')
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-coverage-report
+          path: ./coverage-integration*
+
   build-api:
-    uses: ./.github/workflows/build-golang.yml
-    with:
-      name: api
-    secrets:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
+    needs:
+      - ci
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Component test
+        id: api-component-test
+        shell: bash
+        run: |
+          ./batect component-test:api
+
+      - name: Upload component coverage reports as artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: api-component-coverage-report
+          path: ./coverage-component-api*
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: hpcsc
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Expose GitHub Runtime
+        uses: crazy-max/ghaction-github-runtime@v2
+
+      - name: Use docker-container driver
+        shell: bash
+        run: |
+          if [ -z "$(docker buildx ls | grep ${BUILDER_NAME})" ]; then
+            docker buildx create --name ${BUILDER_NAME} --driver docker-container
+            echo "created new docker buildx builder: ${BUILDER_NAME}"
+          fi
+          docker buildx use ${BUILDER_NAME}
+        env:
+          BUILDER_NAME: docker-container
+
+      - name: Build and push Docker image
+        shell: bash
+        run: |
+          # `ACTIONS_RUNTIME_TOKEN`, `ACTIONS_RUNTIME_URL` are needed by `gha` cache backend (ref: https://docs.docker.com/build/cache/backends/gha/)
+          # Those variables are exposed by step above
+          env | grep ACTIONS_
+          
+          ./scripts/build-docker.sh api --cache-to type=gha --cache-from type=gha
+        env:
+          PUSH: true
 
   staging:
     needs:

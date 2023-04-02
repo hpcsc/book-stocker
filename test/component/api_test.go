@@ -1,4 +1,4 @@
-//go:build component
+//go:build component && api
 
 package component
 

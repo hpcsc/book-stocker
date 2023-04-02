@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/google/uuid"
-	"github.com/hpcsc/book-stocker/api/internal/config"
+	"github.com/hpcsc/book-stocker/internal/config"
 	"github.com/stretchr/testify/require"
 	"os"
 	"strings"

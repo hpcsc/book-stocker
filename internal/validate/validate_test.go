@@ -13,7 +13,7 @@ type toBeValidated struct {
 	GreaterThanTwoField int    `validate:"gt=2"`
 }
 
-func TestCustomMessagesForValidationErrors(t *testing.T) {
+func TestReformat(t *testing.T) {
 	t.Run("return custom message for `required` tag", func(t *testing.T) {
 		v := validator.New()
 

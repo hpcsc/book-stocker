@@ -8,7 +8,7 @@ import (
 	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
-	"github.com/hpcsc/book-stocker/api/internal/store"
+	"github.com/hpcsc/book-stocker/internal/store"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"

@@ -11,7 +11,8 @@ RUN go mod download -x
 RUN go list -f '{{.Path}}/...' -m all | GOARCH=amd64 GOOS=linux CGO_ENABLED=0 xargs -n1 go build -v -i; echo done
 
 #  Add the sources
-ADD . .
+ADD cmd/api ./cmd/api
+ADD internal ./internal
 
 ARG VERSION=main
 
@@ -20,7 +21,7 @@ RUN GOARCH=amd64 \
     GOOS=linux \
     CGO_ENABLED=0 \
       go build -v \
-              --ldflags "-extldflags -static -X 'github.com/hpcsc/book-stocker/api/internal/handler.Version=${VERSION}'" \
+              --ldflags "-extldflags -static -X 'github.com/hpcsc/book-stocker/internal/info.Version=${VERSION}'" \
               -o api \
         ./cmd/api/main.go
 

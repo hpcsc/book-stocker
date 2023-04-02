@@ -7,7 +7,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/hpcsc/book-stocker/api/internal/config"
+	"github.com/hpcsc/book-stocker/internal/config"
 )
 
 type dynamodbStore struct {
