@@ -11,10 +11,10 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 )
 
@@ -39,8 +39,14 @@ var (
 
 func TestAPIComponent(t *testing.T) {
 	t.Run("save stock request to database", func(t *testing.T) {
+		terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+			TerraformDir: "../../infra/examples/api_component_test",
+		})
+
+		defer terraform.Destroy(t, terraformOptions)
+		terraform.InitAndApply(t, terraformOptions)
+
 		client := dynamodbClient(t)
-		ensureTestTableExists(t, client)
 
 		httpResponse := requestStock(t, apiUrl, StockRequest{
 			ISBN:     "isbn-123",
@@ -85,36 +91,6 @@ func dynamodbClient(t *testing.T) *dynamodb.Client {
 	require.NoError(t, err)
 
 	return dynamodb.NewFromConfig(cfg)
-}
-
-func ensureTestTableExists(t *testing.T, client *dynamodb.Client) {
-	_, err := client.DeleteTable(context.TODO(), &dynamodb.DeleteTableInput{
-		TableName: aws.String(testTableName),
-	})
-	if err != nil && !strings.Contains(err.Error(), "resource not found") {
-		require.Fail(t, err.Error())
-	}
-
-	_, err = client.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
-		TableName: aws.String(testTableName),
-		KeySchema: []types.KeySchemaElement{
-			{
-				AttributeName: aws.String("Id"),
-				KeyType:       types.KeyTypeHash,
-			},
-		},
-		AttributeDefinitions: []types.AttributeDefinition{
-			{
-				AttributeName: aws.String("Id"),
-				AttributeType: types.ScalarAttributeTypeS,
-			},
-		},
-		ProvisionedThroughput: &types.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(10),
-			WriteCapacityUnits: aws.Int64(10),
-		},
-	})
-	require.NoError(t, err)
 }
 
 func requestStock(t *testing.T, baseUrl string, request StockRequest) *http.Response {

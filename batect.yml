@@ -68,6 +68,7 @@ tasks:
 
   component-test:api:
     dependencies:
+      - fake-aws
       - api
     run:
       container: build-env

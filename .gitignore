@@ -22,7 +22,7 @@ go.work
 
 .terraform
 *.tfstate*
-provider.tf
+/infra/src/provider.tf
 
 .idea
 **/.batect/caches

@@ -1,12 +1,7 @@
-resource "aws_dynamodb_table" "stock_requests" {
-  name         = "${var.environment}-stock-requests"
-  hash_key     = "Id"
-  billing_mode = "PAY_PER_REQUEST"
+module "api" {
+  source = "./modules/api"
 
-  attribute {
-    name = "Id"
-    type = "S"
-  }
+  environment = var.environment
 }
 
 resource "aws_sns_topic" "request_quote_command" {

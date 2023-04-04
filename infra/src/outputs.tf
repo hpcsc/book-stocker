@@ -1,5 +1,5 @@
 output "stock_requests_arn" {
-  value = aws_dynamodb_table.stock_requests.arn
+  value = module.api.stock_requests_arn
 }
 
 output "request_quote_command_topic_arn" {
