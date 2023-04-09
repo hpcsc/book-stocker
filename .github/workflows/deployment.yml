@@ -4,20 +4,15 @@ on:
   push:
 
 permissions:
-  # to publish to github pages
-  contents: read
-  pages: write
-  id-token: write
-
   # to push docker image to github container registry
+  contents: read
   packages: write
 
+  # to write test report as check run
+  checks: write
 jobs:
   ci:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy-gh-pages.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -32,7 +27,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: unit-coverage-report
-          path: ./coverage-unit*
+          path: ./*-unit*
 
       - name: Integration test
         id: integration-test
@@ -45,25 +40,15 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: integration-coverage-report
-          path: ./coverage-integration*
+          path: ./*-integration*
 
-      - name: Generate mkdocs
-        shell: bash
-        run: |
-          cp -v ./coverage-*.html ./docs/mkdocs/docs/
-          ./batect generate-mkdocs
-
-      - name: Setup Github Pages
-        uses: actions/configure-pages@v3
-
-      - name: Upload mkdocs
-        uses: actions/upload-pages-artifact@v1
+      - name: Test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
         with:
-          path: ./mkdocs-out
-
-      - name: Deploy to Github Pages
-        id: deploy-gh-pages
-        uses: actions/deploy-pages@v2
+          name: test-report-unit-integration
+          path: ./test-result-*.xml
+          reporter: jest-junit
 
   build-api:
     runs-on: ubuntu-latest
@@ -84,7 +69,15 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: api-component-coverage-report
-          path: ./coverage-component-api*
+          path: ./*-component-api*
+
+      - name: Test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: test-report-component-api
+          path: ./test-result-*.xml
+          reporter: jest-junit
 
       - name: Log in to the Container registry
         uses: docker/login-action@v2
@@ -114,7 +107,7 @@ jobs:
           # Those variables are exposed by step above
           env | grep ACTIONS_
           
-          ./scripts/build-docker.sh api --cache-to type=gha --cache-from type=gha
+          ./scripts/build-docker.sh api --cache-to type=gha,mode=max --cache-from type=gha
         env:
           PUSH: true
 

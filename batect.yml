@@ -30,20 +30,15 @@ containers:
       - type: cache
         name: go-cache
         container: /go
+      - type: cache
+        name: golangci-cache
+        container: /home/container-user/.cache/golangci-lint
     working_directory: /app
     environment:
       GOCACHE: /go/cache
     run_as_current_user:
       enabled: true
       home_directory: /home/container-user
-
-  mkdocs:
-    build_directory: ./.batect/mkdocs
-    working_directory: /app
-    volumes:
-      - local: .
-        container: /app
-        options: cached
 
 tasks:
   lint:
@@ -82,8 +77,3 @@ tasks:
     run:
       container: build-env
       command: /build/scripts/scan-vulnerability.sh
-
-  generate-mkdocs:
-    run:
-      container: mkdocs
-      command: mkdocs build -f /app/docs/mkdocs/mkdocs.yml --site-dir /app/mkdocs-out

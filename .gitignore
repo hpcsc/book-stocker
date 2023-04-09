@@ -27,3 +27,4 @@ go.work
 .idea
 **/.batect/caches
 coverage-*
+test-result-*
